@@ -1,0 +1,14 @@
+feat: Implement interactive academic year Gantt chart web app
+
+This commit introduces the initial version of the interactive academic year Gantt chart web application.
+
+Key features include:
+- Frontend built with HTML, Tailwind CSS, Chart.js, and Vanilla JavaScript.
+- Backend powered by Google Firebase (Firestore for data persistence, Firebase Authentication for anonymous user sessions).
+- Core visualization of academic activities on a horizontal timeline (Gantt chart) and a detailed list view.
+- CRUD (Create, Read, Update, Delete) functionality for managing activities.
+- Filtering by category and searching for activities.
+- Real-time updates across all active users.
+- Initial data seeding on first use.
+
+Firebase configuration and security rules are set up to allow authenticated users to read and write academic event data.

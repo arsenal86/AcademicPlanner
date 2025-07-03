@@ -52,76 +52,95 @@
     </style>
 </head>
 <body class="text-stone-800">
-
-
-    <div class="container mx-auto p-4 md:p-8">
-       
-        <header class="text-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-bold text-stone-900">Computing & Engineering Admin Dashboard</h1>
-            <p class="text-lg text-stone-600 mt-2">Annual Plan: Academic Year 2025-2026</p>
-        </header>
-
-
-        <main class="bg-white rounded-xl shadow-sm p-4 sm:p-6 md:p-8">
-
-
-            <div id="controls" class="mb-8">
-                <div class="flex justify-between items-center mb-6">
-                     <h2 class="text-lg font-semibold text-stone-700">Controls</h2>
-                     <button id="add-new-btn" class="bg-teal-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-teal-700 transition shadow-sm">Add New Activity</button>
+    <div id="auth-container" class="flex items-center justify-center min-h-screen bg-stone-100">
+        <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-sm">
+            <h2 class="text-2xl font-bold text-center mb-6 text-stone-800">Login to Academic Planner</h2>
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label for="login-email" class="block text-sm font-medium text-stone-700">Email</label>
+                    <input type="email" id="login-email" class="mt-1 block w-full border-stone-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500" required autocomplete="username">
                 </div>
-                <div class="mb-6">
-                    <h3 class="text-md font-semibold text-stone-700 mb-2">Filter by Category</h3>
-                     <p class="text-sm text-stone-500 mb-4">Select categories to focus the Gantt chart and activity list on specific areas. Click a selected category again to clear the filter.</p>
-                    <div id="category-filters" class="flex flex-wrap gap-2">
+                <div>
+                    <label for="login-password" class="block text-sm font-medium text-stone-700">Password</label>
+                    <input type="password" id="login-password" class="mt-1 block w-full border-stone-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="w-full bg-teal-600 text-white py-2 px-4 rounded-md hover:bg-teal-700 transition">Login</button>
+                <p id="login-error-message" class="text-red-500 text-sm text-center mt-2 hidden"></p>
+            </form>
+            <p class="text-sm text-stone-500 text-center mt-4">
+                For initial setup, you can create users directly in the Firebase Console.
+            </p>
+        </div>
+    </div>
+
+    <div id="app-container" class="hidden">
+        <div class="container mx-auto p-4 md:p-8">
+            <header class="text-center mb-8">
+                <h1 class="text-3xl md:text-4xl font-bold text-stone-900">Computing & Engineering Admin Dashboard</h1>
+                <p class="text-lg text-stone-600 mt-2">Annual Plan: Academic Year 2025-2026</p>
+                <div class="flex justify-end items-center text-sm text-stone-600 mt-4">
+                    <span id="user-info"></span>
+                    <button id="logout-btn" class="ml-4 px-3 py-1 bg-stone-200 text-stone-800 rounded-md hover:bg-stone-300 transition">Logout</button>
+                </div>
+            </header>
+
+            <main class="bg-white rounded-xl shadow-sm p-4 sm:p-6 md:p-8">
+                <div id="controls" class="mb-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-lg font-semibold text-stone-700">Controls</h2>
+                        <button id="add-new-btn" class="bg-teal-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-teal-700 transition shadow-sm">Add New Activity</button>
                     </div>
-                </div>
-                 <div>
-                    <h3 class="text-md font-semibold text-stone-700 mb-2">Search Activities</h3>
-                    <p class="text-sm text-stone-500 mb-4">Instantly find any activity, event, or responsible team by typing in the search box below.</p>
-                    <div class="relative">
-                        <input type="text" id="search-box" placeholder="Search for 'Exams', 'Open Day', etc..." class="w-full pl-10 pr-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition">
-                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg class="h-5 w-5 text-stone-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" />
-                            </svg>
+                    <div class="mb-6">
+                        <h3 class="text-md font-semibold text-stone-700 mb-2">Filter by Category</h3>
+                        <p class="text-sm text-stone-500 mb-4">Select categories to focus the Gantt chart and activity list on specific areas. Click a selected category again to clear the filter.</p>
+                        <div id="category-filters" class="flex flex-wrap gap-2">
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-md font-semibold text-stone-700 mb-2">Search Activities</h3>
+                        <p class="text-sm text-stone-500 mb-4">Instantly find any activity, event, or responsible team by typing in the search box below.</p>
+                        <div class="relative">
+                            <input type="text" id="search-box" placeholder="Search for 'Exams', 'Open Day', etc..." class="w-full pl-10 pr-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-stone-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-           
-            <section id="gantt-chart-section" class="mb-8">
-                 <div class="border-t border-stone-200 pt-8">
-                    <h2 class="text-2xl font-bold text-center mb-2 text-stone-800">Academic Year Timeline</h2>
-                    <p class="text-md text-stone-600 text-center mb-6">This chart visualizes the duration and timing of all key administrative activities. Hover over any bar to see its details.</p>
-                    <div class="chart-container bg-stone-50 p-2 rounded-lg">
-                        <canvas id="ganttChart"></canvas>
+                
+                <section id="gantt-chart-section" class="mb-8">
+                    <div class="border-t border-stone-200 pt-8">
+                        <h2 class="text-2xl font-bold text-center mb-2 text-stone-800">Academic Year Timeline</h2>
+                        <p class="text-md text-stone-600 text-center mb-6">This chart visualizes the duration and timing of all key administrative activities. Hover over any bar to see its details.</p>
+                        <div class="chart-container bg-stone-50 p-2 rounded-lg">
+                            <canvas id="ganttChart"></canvas>
+                        </div>
                     </div>
-                </div>
-            </section>
+                </section>
 
 
-            <section id="activities-list-section">
-                 <div class="border-t border-stone-200 pt-8">
-                    <h2 class="text-2xl font-bold text-center mb-2 text-stone-800">Activity Details</h2>
-                    <p class="text-md text-stone-600 text-center mb-6">A detailed list of the activities currently displayed in the chart above. Use the filters to narrow down this list.</p>
-                    <div id="activities-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                         <p id="loading-indicator" class="col-span-full text-center text-stone-500 py-12">Connecting to database and loading academic data...</p>
+                <section id="activities-list-section">
+                    <div class="border-t border-stone-200 pt-8">
+                        <h2 class="text-2xl font-bold text-center mb-2 text-stone-800">Activity Details</h2>
+                        <p class="text-md text-stone-600 text-center mb-6">A detailed list of the activities currently displayed in the chart above. Use the filters to narrow down this list.</p>
+                        <div id="activities-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <p id="loading-indicator" class="col-span-full text-center text-stone-500 py-12">Connecting to database and loading academic data...</p>
+                        </div>
+                        <div id="no-results" class="hidden text-center py-12">
+                            <p class="text-xl font-semibold text-stone-700">No Matching Activities</p>
+                            <p class="text-stone-500 mt-2">Try adjusting your search or filters.</p>
+                        </div>
                     </div>
-                    <div id="no-results" class="hidden text-center py-12">
-                         <p class="text-xl font-semibold text-stone-700">No Matching Activities</p>
-                         <p class="text-stone-500 mt-2">Try adjusting your search or filters.</p>
-                    </div>
-                </div>
-            </section>
-
-
-        </main>
-       
-        <footer class="text-center mt-8 text-sm text-stone-500">
-            <p>Powered by Firestore, Chart.js and Tailwind CSS.</p>
-            <p>This dashboard is an interactive representation of the C&E 2025-2026 administrative plan.</p>
-        </footer>
+                </section>
+            </main>
+            
+            <footer class="text-center mt-8 text-sm text-stone-500">
+                <p>Powered by Firestore, Chart.js and Tailwind CSS.</p>
+                <p>This dashboard is an interactive representation of the C&E 2025-2026 administrative plan.</p>
+            </footer>
+        </div>
     </div>
 
 
@@ -184,8 +203,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, getDocs, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -204,7 +223,7 @@
             let academicData = [];
             let activeCategory = null;
             let chart;
-            let userId;
+            let currentUserRole = null;
 
 
             const categoryColors = {
@@ -243,6 +262,60 @@
                 { activity: "Annual Course Review & Planning", category: "Quality Assurance", start: "2026-07-01", end: "2026-08-31", responsible: "Programme Leaders, Admin", notes: "Review student feedback, module results, and plan for 2026-27.", kbLink: "" },
                 { activity: "UCAS Application Cycle Opens (2027 Entry)", category: "Admissions", start: "2026-09-01", end: "2026-09-30", responsible: "Admissions Team", notes: "Preparation for the next intake.", kbLink: "" }
             ];
+
+
+            const loginForm = document.getElementById('login-form');
+            const loginEmailInput = document.getElementById('login-email');
+            const loginPasswordInput = document.getElementById('login-password');
+            const loginErrorMessage = document.getElementById('login-error-message');
+            const authContainer = document.getElementById('auth-container');
+
+            loginEmailInput.addEventListener('input', () => {
+                loginErrorMessage.classList.add('hidden');
+            });
+
+            loginPasswordInput.addEventListener('input', () => {
+                loginErrorMessage.classList.add('hidden');
+            });
+            const appContainer = document.getElementById('app-container');
+            const logoutBtn = document.getElementById('logout-btn');
+            const userInfoSpan = document.getElementById('user-info');
+
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = loginEmailInput.value;
+                const password = loginPasswordInput.value;
+                loginErrorMessage.textContent = ''; // Clear previous errors
+                loginErrorMessage.classList.add('hidden');
+
+                try {
+                    await signInWithEmailAndPassword(auth, email, password);
+                    // If successful, onAuthStateChanged will handle UI update
+                } catch (error) {
+                    console.error("Login error:", error.message);
+                    let errorMessage = "An unknown error occurred. Please try again.";
+                    switch (error.code) {
+                        case 'auth/invalid-email':
+                            errorMessage = "Invalid email address.";
+                            break;
+                        case 'auth/user-disabled':
+                            errorMessage = "This user account has been disabled.";
+                            break;
+                        case 'auth/user-not-found':
+                        case 'auth/wrong-password':
+                            errorMessage = "Invalid email or password.";
+                            break;
+                        case 'auth/invalid-credential':
+                            errorMessage = "Invalid credentials. Please check your email and password.";
+                            break;
+                        default:
+                            errorMessage = error.message;
+                            break;
+                    }
+                    loginErrorMessage.textContent = errorMessage;
+                    loginErrorMessage.classList.remove('hidden');
+                }
+            });
 
 
             const searchBox = document.getElementById('search-box');
@@ -520,8 +593,13 @@
 
             onAuthStateChanged(auth, async (user) => {
                 if (user) {
+                    // User is signed in
+                    authContainer.classList.add('hidden');
+                    appContainer.classList.remove('hidden');
+                    userInfoSpan.textContent = `Logged in as: ${user.email}`;
+
                     try {
-                        userId = user.uid;
+                        let userId = null;
                         const collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'academic_events');
                        
                         await seedInitialData(collectionRef);
@@ -538,19 +616,27 @@
                             }
                         });
                     } catch (error) {
-                        console.log("Failed to initialize data listener due to seeding error.");
+                        console.log("Failed to initialize data listener due to seeding error.", error);
                         // The error message is already displayed by seedInitialData
                     }
+                } else {
+                    // User is signed out
+                    authContainer.classList.remove('hidden');
+                    appContainer.classList.add('hidden');
+                    userInfoSpan.textContent = '';
+                }
+            });
+
+            logoutBtn.addEventListener('click', async () => {
+                try {
+                    await signOut(auth);
+                } catch (error) {
+                    console.error("Logout error:", error);
                 }
             });
 
 
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                signInWithCustomToken(auth, __initial_auth_token).catch(error => console.error("Error signing in with custom token:", error));
-            } else {
-                signInAnonymously(auth).catch(error => console.error("Error signing in anonymously:", error));
-            }
-        });
+            });
     </script>
 </body>
 </html>

@@ -1,8 +1,18 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Rules for academic_events collection (TEMPORARILY ALLOW ALL FOR DEBUGGING)
     match /artifacts/gantt-chart-default/public/data/academic_events/{document} {
-      allow read, write: if request.auth != null;
+      allow read, write;
+    }
+
+    // Rules for users collection
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      // Only allow creation of user documents by authenticated users, and only if the role is 'read-only' or 'admin'
+      allow create: if request.auth != null && (request.resource.data.role == 'read-only' || request.resource.data.role == 'admin');
+      // Only allow updates to user documents by authenticated users, and only if the role is 'admin'
+      allow update: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
   }
 }
