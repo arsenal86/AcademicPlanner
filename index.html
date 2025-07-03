@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C&E Admin Dashboard | Academic Year 2025-2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: A dashboard-style application is chosen for optimal usability. The structure includes a header, a control panel with category filters and a search bar, a main interactive Gantt chart visualization, and a detailed list view. This structure transforms the static data table into a dynamic tool. It allows users to visually comprehend timelines and overlaps with the Gantt chart, while the filters and search empower them to drill down into specific areas of responsibility (e.g., viewing only 'Admissions' tasks). This is more intuitive and task-oriented than a simple linear table, catering directly to the administrative team's need to manage different concurrent workstreams throughout the academic year. -->
+    <!-- Visualization & Content Choices: The core data from the report is a list of timed events. Goal: Visualize duration, overlap, and timing of events. Method: An interactive Gantt chart. Interaction: Users can filter by category or search, and the chart dynamically updates. Hovering provides detailed tooltips. Justification: This is the most effective way to represent timeline-based data visually. The interactivity allows users to focus on relevant information, which is a key requirement for an administrative team managing diverse tasks. The secondary view is a dynamic list that provides full textual details corresponding to the filtered chart view. Library: Chart.js is used for its robust, canvas-based charting capabilities, perfectly suited for a responsive Gantt-style bar chart. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f5f4; /* stone-100 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 600px;
+            max-height: 70vh;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e7e5e4; /* stone-200 */
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #a8a29e; /* stone-400 */
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #78716c; /* stone-500 */
+        }
+        .filter-btn.active {
+            background-color: #0d9488; /* teal-600 */
+            color: white;
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        }
+        dialog::backdrop {
+            background: rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+<body class="text-stone-800">
+
+
+    <div class="container mx-auto p-4 md:p-8">
+       
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-stone-900">Computing & Engineering Admin Dashboard</h1>
+            <p class="text-lg text-stone-600 mt-2">Annual Plan: Academic Year 2025-2026</p>
+        </header>
+
+
+        <main class="bg-white rounded-xl shadow-sm p-4 sm:p-6 md:p-8">
+
+
+            <div id="controls" class="mb-8">
+                <div class="flex justify-between items-center mb-6">
+                     <h2 class="text-lg font-semibold text-stone-700">Controls</h2>
+                     <button id="add-new-btn" class="bg-teal-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-teal-700 transition shadow-sm">Add New Activity</button>
+                </div>
+                <div class="mb-6">
+                    <h3 class="text-md font-semibold text-stone-700 mb-2">Filter by Category</h3>
+                     <p class="text-sm text-stone-500 mb-4">Select categories to focus the Gantt chart and activity list on specific areas. Click a selected category again to clear the filter.</p>
+                    <div id="category-filters" class="flex flex-wrap gap-2">
+                    </div>
+                </div>
+                 <div>
+                    <h3 class="text-md font-semibold text-stone-700 mb-2">Search Activities</h3>
+                    <p class="text-sm text-stone-500 mb-4">Instantly find any activity, event, or responsible team by typing in the search box below.</p>
+                    <div class="relative">
+                        <input type="text" id="search-box" placeholder="Search for 'Exams', 'Open Day', etc..." class="w-full pl-10 pr-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition">
+                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-5 w-5 text-stone-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+           
+            <section id="gantt-chart-section" class="mb-8">
+                 <div class="border-t border-stone-200 pt-8">
+                    <h2 class="text-2xl font-bold text-center mb-2 text-stone-800">Academic Year Timeline</h2>
+                    <p class="text-md text-stone-600 text-center mb-6">This chart visualizes the duration and timing of all key administrative activities. Hover over any bar to see its details.</p>
+                    <div class="chart-container bg-stone-50 p-2 rounded-lg">
+                        <canvas id="ganttChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+
+            <section id="activities-list-section">
+                 <div class="border-t border-stone-200 pt-8">
+                    <h2 class="text-2xl font-bold text-center mb-2 text-stone-800">Activity Details</h2>
+                    <p class="text-md text-stone-600 text-center mb-6">A detailed list of the activities currently displayed in the chart above. Use the filters to narrow down this list.</p>
+                    <div id="activities-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                         <p id="loading-indicator" class="col-span-full text-center text-stone-500 py-12">Connecting to database and loading academic data...</p>
+                    </div>
+                    <div id="no-results" class="hidden text-center py-12">
+                         <p class="text-xl font-semibold text-stone-700">No Matching Activities</p>
+                         <p class="text-stone-500 mt-2">Try adjusting your search or filters.</p>
+                    </div>
+                </div>
+            </section>
+
+
+        </main>
+       
+        <footer class="text-center mt-8 text-sm text-stone-500">
+            <p>Powered by Firestore, Chart.js and Tailwind CSS.</p>
+            <p>This dashboard is an interactive representation of the C&E 2025-2026 administrative plan.</p>
+        </footer>
+    </div>
+
+
+    <dialog id="activity-modal" class="p-0 rounded-lg shadow-xl w-full max-w-lg">
+        <div class="p-6">
+            <h2 id="modal-title" class="text-2xl font-bold mb-4">Add New Activity</h2>
+            <form id="activity-form">
+                <input type="hidden" id="activity-id">
+                <div class="space-y-4">
+                    <div>
+                        <label for="activity-name" class="block text-sm font-medium text-stone-700">Activity/Event Name</label>
+                        <input type="text" id="activity-name" class="mt-1 block w-full border-stone-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500" required>
+                    </div>
+                    <div>
+                        <label for="activity-category" class="block text-sm font-medium text-stone-700">Category</label>
+                        <select id="activity-category" class="mt-1 block w-full border-stone-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500" required></select>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="start-date" class="block text-sm font-medium text-stone-700">Start Date</label>
+                            <input type="date" id="start-date" class="mt-1 block w-full border-stone-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500" required>
+                        </div>
+                        <div>
+                            <label for="end-date" class="block text-sm font-medium text-stone-700">End Date</label>
+                            <input type="date" id="end-date" class="mt-1 block w-full border-stone-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500" required>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="responsible-team" class="block text-sm font-medium text-stone-700">Responsible Team/Lead</label>
+                        <input type="text" id="responsible-team" class="mt-1 block w-full border-stone-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500" required>
+                    </div>
+                     <div>
+                        <label for="kb-link" class="block text-sm font-medium text-stone-700">Knowledge Base Link (optional)</label>
+                        <input type="url" id="kb-link" placeholder="https://example.com/kb/article" class="mt-1 block w-full border-stone-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label for="notes" class="block text-sm font-medium text-stone-700">Notes</label>
+                        <textarea id="notes" rows="3" class="mt-1 block w-full border-stone-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"></textarea>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end gap-4">
+                    <button type="button" id="cancel-btn" class="px-4 py-2 bg-stone-200 text-stone-800 rounded-md hover:bg-stone-300">Cancel</button>
+                    <button type="submit" id="save-btn" class="px-4 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-700">Save Activity</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+   
+    <dialog id="confirm-delete-modal" class="p-6 rounded-lg shadow-xl w-full max-w-sm">
+        <h2 class="text-xl font-bold mb-4">Confirm Deletion</h2>
+        <p class="text-stone-600 mb-6">Are you sure you want to delete this activity? This action cannot be undone.</p>
+        <div class="flex justify-end gap-4">
+            <button id="cancel-delete-btn" class="px-4 py-2 bg-stone-200 text-stone-800 rounded-md hover:bg-stone-300">Cancel</button>
+            <button id="confirm-delete-btn" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">Delete</button>
+        </div>
+    </dialog>
+
+
+
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const firebaseConfig = {
+                apiKey: "AIzaSyC8-gPSUUbV0BV6TGhEjdiC_o5UwqUBI0A",
+                authDomain: "sample-firebase-ai-app-976e1.firebaseapp.com",
+                projectId: "sample-firebase-ai-app-976e1"
+            };
+            const appId = 'gantt-chart-default';
+           
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+            const auth = getAuth(app);
+
+
+            let academicData = [];
+            let activeCategory = null;
+            let chart;
+            let userId;
+
+
+            const categoryColors = {
+                'Administration': 'rgba(29, 78, 216, 0.7)', 'Admissions': 'rgba(190, 18, 60, 0.7)', 'Student Support': 'rgba(217, 119, 6, 0.7)', 'Welcome & Induction': 'rgba(4, 120, 87, 0.7)', 'Academics': 'rgba(13, 148, 136, 0.7)', 'Assessments': 'rgba(147, 51, 234, 0.7)', 'University Holiday': 'rgba(107, 114, 128, 0.7)', 'Recruitment': 'rgba(219, 39, 119, 0.7)', 'Quality Assurance': 'rgba(99, 102, 241, 0.7)', 'Careers & Placements': 'rgba(22, 163, 74, 0.7)', 'Events': 'rgba(234, 88, 12, 0.7)'
+            };
+            const categoryBorderColors = {
+                'Administration': 'rgb(29, 78, 216)', 'Admissions': 'rgb(190, 18, 60)', 'Student Support': 'rgb(217, 119, 6)', 'Welcome & Induction': 'rgb(4, 120, 87)', 'Academics': 'rgb(13, 148, 136)', 'Assessments': 'rgb(147, 51, 234)', 'University Holiday': 'rgb(107, 114, 128)', 'Recruitment': 'rgb(219, 39, 119)', 'Quality Assurance': 'rgb(99, 102, 241)', 'Careers & Placements': 'rgb(22, 163, 74)', 'Events': 'rgb(234, 88, 12)'
+            };
+            const initialData = [
+                { activity: "Pre-Term Preparation", category: "Administration", start: "2025-08-01", end: "2025-09-20", responsible: "Admin Team", notes: "Finalise timetables, update handbooks, prepare welcome packs.", kbLink: "" },
+                { activity: "A-Level Results & Clearing", category: "Admissions", start: "2025-08-14", end: "2025-09-20", responsible: "Admissions, C&E Tutors", notes: "High volume of calls and emails expected.", kbLink: "" },
+                { activity: "International Student Arrival & Orientation", category: "Student Support", start: "2025-09-08", end: "2025-09-20", responsible: "International Office, C&E Admin", notes: "", kbLink: "" },
+                { activity: "Welcome Week", category: "Welcome & Induction", start: "2025-09-22", end: "2025-09-26", responsible: "All Staff", notes: "Departmental inductions, IT account setup, lab safety briefings.", kbLink: "" },
+                { activity: "Term 1 Teaching Starts", category: "Academics", start: "2025-09-29", end: "2025-12-12", responsible: "Academic Staff", notes: "", kbLink: "" },
+                { activity: "Module Registration Deadline", category: "Administration", start: "2025-10-10", end: "2025-10-10", responsible: "Admin Team", notes: "", kbLink: "" },
+                { activity: "Personal Tutor Meetings (Initial)", category: "Student Support", start: "2025-10-06", end: "2025-10-24", responsible: "Academic Tutors", notes: "", kbLink: "" },
+                { activity: "Reading Week / Enhancement Week", category: "Academics", start: "2025-11-03", end: "2025-11-07", responsible: "All Staff", notes: "Departmental activities, guest lectures, industry talks.", kbLink: "" },
+                { activity: "Term 1 Coursework Deadlines", category: "Assessments", start: "2025-11-24", end: "2025-12-12", responsible: "Students, Markers", notes: "Stagger deadlines where possible to manage marking load.", kbLink: "" },
+                { activity: "Christmas Break", category: "University Holiday", start: "2025-12-15", end: "2026-01-09", responsible: "N/A", notes: "University closure dates to be confirmed.", kbLink: "" },
+                { activity: "Term 1 Exam Period", category: "Assessments", start: "2026-01-12", end: "2026-01-23", responsible: "Exams Office, C&E Admin", notes: "", kbLink: "" },
+                { activity: "Term 1 Marking & Moderation", category: "Assessments", start: "2026-01-12", end: "2026-02-06", responsible: "Academic Staff", notes: "", kbLink: "" },
+                { activity: "Term 2 Teaching Starts", category: "Academics", start: "2026-01-26", end: "2026-04-10", responsible: "Academic Staff", notes: "", kbLink: "" },
+                { activity: "Postgraduate Open Day", category: "Recruitment", start: "2026-02-25", end: "2026-02-25", responsible: "Recruitment, C&E Staff", notes: "", kbLink: "" },
+                { activity: "National Student Survey (NSS) Launch", category: "Quality Assurance", start: "2026-02-02", end: "2026-04-30", responsible: "Admin Team, Tutors", notes: "Promote to final year undergraduate students.", kbLink: "" },
+                { activity: "Undergraduate Open Day", category: "Recruitment", start: "2026-03-14", end: "2026-03-14", responsible: "Recruitment, C&E Staff", notes: "", kbLink: "" },
+                { activity: "Final Year Project Deadlines", category: "Assessments", start: "2026-03-23", end: "2026-04-10", responsible: "Students, Supervisors", notes: "", kbLink: "" },
+                { activity: "Easter Break", category: "University Holiday", start: "2026-04-13", end: "2026-04-24", responsible: "N/A", notes: "", kbLink: "" },
+                { activity: "Term 2 Coursework Deadlines", category: "Assessments", start: "2026-04-27", end: "2026-05-15", responsible: "Students, Markers", notes: "", kbLink: "" },
+                { activity: "Term 2/3 Exam Period", category: "Assessments", start: "2026-05-18", end: "2026-06-12", responsible: "Exams Office, C&E Admin", notes: "", kbLink: "" },
+                { activity: "Term 2/3 Marking & Moderation", category: "Assessments", start: "2026-05-18", end: "2026-06-26", responsible: "Academic Staff", notes: "", kbLink: "" },
+                { activity: "Industrial Placement Finalisation", category: "Careers & Placements", start: "2026-05-01", end: "2026-07-31", responsible: "Placements Team", notes: "For students starting placements in the next academic year.", kbLink: "" },
+                { activity: "Assessment Boards", category: "Quality Assurance", start: "2026-06-29", end: "2026-07-10", responsible: "Exam Board Members", notes: "", kbLink: "" },
+                { activity: "Results Publication", category: "Administration", start: "2026-07-13", end: "2026-07-13", responsible: "Admin Team", notes: "", kbLink: "" },
+                { activity: "Resit Period", category: "Assessments", start: "2026-08-10", end: "2026-08-21", responsible: "Exams Office, C&E Admin", notes: "", kbLink: "" },
+                { activity: "Graduation Ceremonies", category: "Events", start: "2026-07-20", end: "2026-07-24", responsible: "Events Team", notes: "C&E specific dates to be confirmed.", kbLink: "" },
+                { activity: "Annual Course Review & Planning", category: "Quality Assurance", start: "2026-07-01", end: "2026-08-31", responsible: "Programme Leaders, Admin", notes: "Review student feedback, module results, and plan for 2026-27.", kbLink: "" },
+                { activity: "UCAS Application Cycle Opens (2027 Entry)", category: "Admissions", start: "2026-09-01", end: "2026-09-30", responsible: "Admissions Team", notes: "Preparation for the next intake.", kbLink: "" }
+            ];
+
+
+            const searchBox = document.getElementById('search-box');
+            const categoryFiltersContainer = document.getElementById('category-filters');
+            const activitiesList = document.getElementById('activities-list');
+            const noResultsDiv = document.getElementById('no-results');
+            const ctx = document.getElementById('ganttChart').getContext('2d');
+            const addNewBtn = document.getElementById('add-new-btn');
+            const activityModal = document.getElementById('activity-modal');
+            const activityForm = document.getElementById('activity-form');
+            const cancelBtn = document.getElementById('cancel-btn');
+            const modalTitle = document.getElementById('modal-title');
+            const activityIdInput = document.getElementById('activity-id');
+            const confirmDeleteModal = document.getElementById('confirm-delete-modal');
+            const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+            const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+            let activityToDeleteId = null;
+
+
+            async function seedInitialData(collectionRef) {
+                try {
+                    const snapshot = await getDocs(collectionRef);
+                    if (snapshot.empty) {
+                        console.log("Database is empty. Seeding initial data...");
+                        const batch = writeBatch(db);
+                        initialData.forEach(item => {
+                            const docRef = doc(collectionRef);
+                            batch.set(docRef, item);
+                        });
+                        await batch.commit();
+                        console.log("Initial data seeded successfully.");
+                    } else {
+                        console.log("Database already contains data. Skipping seed.");
+                    }
+                } catch (error) {
+                    console.error("Error seeding initial data:", error);
+                    console.error("This is often due to Firebase Security Rules. Ensure your rules allow writes to the collection.");
+                    const loadingIndicator = document.getElementById('loading-indicator');
+                    if (loadingIndicator) {
+                        loadingIndicator.innerHTML = `<span class="text-red-600 font-semibold">Error:</span> Could not seed initial data. <br> Please check the browser console for details and verify your Firebase security rules.`;
+                    }
+                    throw error;
+                }
+            }
+
+
+            function populateStaticUI() {
+                const allCategories = Object.keys(categoryColors);
+               
+                const categorySelect = document.getElementById('activity-category');
+                categorySelect.innerHTML = allCategories.map(c => `<option value="${c}">${c}</option>`).join('');
+
+
+                categoryFiltersContainer.innerHTML = allCategories.map(category => `
+                    <button class="filter-btn px-3 py-1.5 text-sm font-medium text-stone-700 bg-stone-100 rounded-full hover:bg-stone-200 transition" data-category="${category}">
+                        ${category}
+                    </button>
+                `).join('');
+               
+                const allButton = document.createElement('button');
+                allButton.className = "filter-btn px-3 py-1.5 text-sm font-medium text-stone-700 bg-stone-100 rounded-full hover:bg-stone-200 transition active";
+                allButton.dataset.category = "all";
+                allButton.textContent = "All Categories";
+                categoryFiltersContainer.appendChild(allButton);
+
+
+                document.querySelectorAll('.filter-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const clickedCategory = e.target.dataset.category;
+                        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+                        e.target.classList.add('active');
+                        activeCategory = (clickedCategory === 'all') ? null : clickedCategory;
+                        updateView();
+                    });
+                });
+            }
+
+
+            function renderActivitiesList(data) {
+                const loadingIndicator = document.getElementById('loading-indicator');
+                if (loadingIndicator) {
+                    loadingIndicator.remove();
+                }
+
+
+                if (data.length === 0) {
+                    activitiesList.innerHTML = '';
+                    noResultsDiv.classList.remove('hidden');
+                    activitiesList.classList.add('hidden');
+                    return;
+                }
+                noResultsDiv.classList.add('hidden');
+                activitiesList.classList.remove('hidden');
+
+
+                activitiesList.innerHTML = data.map(item => {
+                    const startDate = new Date(item.start);
+                    const endDate = new Date(item.end);
+                    const formattedStart = startDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+                    const formattedEnd = endDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
+
+                    return `
+                        <div class="bg-stone-50 border border-stone-200 rounded-lg p-4 flex flex-col h-full shadow-sm">
+                           <div class="flex-grow">
+                             <span class="text-xs font-semibold px-2 py-1 rounded-full" style="background-color: ${categoryColors[item.category] || '#ccc'}; color: white;">
+                                ${item.category}
+                            </span>
+                            <h3 class="font-bold text-md mt-2 mb-1 text-stone-800">${item.activity}</h3>
+                            <p class="text-sm text-stone-600 mb-2">
+                                <span class="font-semibold">Dates:</span> ${formattedStart} - ${formattedEnd}
+                            </p>
+                            <p class="text-sm text-stone-600 mb-3">
+                                <span class="font-semibold">Lead:</span> ${item.responsible}
+                            </p>
+                             ${item.notes ? `<p class="text-xs text-stone-500 bg-stone-100 p-2 rounded mb-3">${item.notes}</p>` : ''}
+                             ${item.kbLink ? `<a href="${item.kbLink}" target="_blank" rel="noopener noreferrer" class="text-sm text-teal-600 hover:text-teal-800 font-semibold">Knowledge Base &#8599;</a>` : ''}
+                           </div>
+                           <div class="border-t border-stone-200 mt-4 pt-3 flex justify-end gap-2">
+                                <button class="edit-btn text-sm text-stone-600 hover:text-stone-900" data-id="${item.id}">Edit</button>
+                                <button class="delete-btn text-sm text-red-500 hover:text-red-700" data-id="${item.id}">Delete</button>
+                           </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+           
+            function renderGanttChart(data) {
+                if (chart) { chart.destroy(); }
+                const sortedData = data.slice().sort((a, b) => new Date(a.start) - new Date(b.start));
+
+
+                chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: sortedData.map(d => d.activity),
+                        datasets: [{
+                            label: 'Activity Duration',
+                            data: sortedData.map(d => [new Date(d.start), new Date(d.end)]),
+                            backgroundColor: sortedData.map(d => categoryColors[d.category] || 'rgba(120, 113, 108, 0.7)'),
+                            borderColor: sortedData.map(d => categoryBorderColors[d.category] || 'rgb(120, 113, 108)'),
+                            borderWidth: 1, borderSkipped: false, borderRadius: 4, barPercentage: 0.6,
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                        scales: {
+                            x: { type: 'time', time: { unit: 'month', tooltipFormat: 'dd MMM yy' }, min: '2025-07-15', max: '2026-09-15', grid: { color: '#e7e5e4' }, ticks: { color: '#57534e' } },
+                            y: { grid: { display: false }, ticks: { color: '#57534e', autoSkip: false, font: { size: 10 } } }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                displayColors: false,
+                                callbacks: {
+                                    title: (context) => context[0].label,
+                                    label: (context) => {
+                                        const d = sortedData[context.dataIndex];
+                                        const startDate = new Date(d.start).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+                                        const endDate = new Date(d.end).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+                                        return [`Category: ${d.category}`, `Dates: ${startDate} to ${endDate}`, `Responsible: ${d.responsible}`];
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+
+            function updateView() {
+                const searchTerm = searchBox.value.toLowerCase();
+                const filteredData = academicData.filter(item => {
+                    const inCategory = !activeCategory || item.category === activeCategory;
+                    const inSearch = !searchTerm || Object.values(item).some(val => String(val).toLowerCase().includes(searchTerm));
+                    return inCategory && inSearch;
+                });
+                renderGanttChart(filteredData);
+                renderActivitiesList(filteredData);
+            }
+
+
+            function openEditModal(id) {
+                const activity = academicData.find(a => a.id === id);
+                if (!activity) return;
+                modalTitle.textContent = "Edit Activity";
+                activityIdInput.value = activity.id;
+                document.getElementById('activity-name').value = activity.activity;
+                document.getElementById('activity-category').value = activity.category;
+                document.getElementById('start-date').value = activity.start;
+                document.getElementById('end-date').value = activity.end;
+                document.getElementById('responsible-team').value = activity.responsible;
+                document.getElementById('kb-link').value = activity.kbLink || '';
+                document.getElementById('notes').value = activity.notes;
+                activityModal.showModal();
+            }
+           
+            addNewBtn.addEventListener('click', () => {
+                modalTitle.textContent = "Add New Activity";
+                activityForm.reset();
+                activityIdInput.value = '';
+                activityModal.showModal();
+            });
+
+
+            cancelBtn.addEventListener('click', () => activityModal.close());
+            activityModal.addEventListener('click', (e) => {
+                 if (e.target === activityModal) activityModal.close();
+            });
+
+
+            activityForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const id = activityIdInput.value;
+                const data = {
+                    activity: document.getElementById('activity-name').value,
+                    category: document.getElementById('activity-category').value,
+                    start: document.getElementById('start-date').value,
+                    end: document.getElementById('end-date').value,
+                    responsible: document.getElementById('responsible-team').value,
+                    kbLink: document.getElementById('kb-link').value,
+                    notes: document.getElementById('notes').value,
+                };
+
+
+                const collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'academic_events');
+                try {
+                    if (id) {
+                        await updateDoc(doc(collectionRef, id), data);
+                    } else {
+                        await addDoc(collectionRef, data);
+                    }
+                    activityModal.close();
+                } catch (error) {
+                    console.error("Error saving data: ", error);
+                }
+            });
+
+
+            activitiesList.addEventListener('click', (e) => {
+                if (e.target.classList.contains('edit-btn')) {
+                    openEditModal(e.target.dataset.id);
+                }
+                if (e.target.classList.contains('delete-btn')) {
+                    activityToDeleteId = e.target.dataset.id;
+                    confirmDeleteModal.showModal();
+                }
+            });
+
+
+            cancelDeleteBtn.addEventListener('click', () => confirmDeleteModal.close());
+            confirmDeleteModal.addEventListener('click', (e) => {
+                if(e.target === confirmDeleteModal) confirmDeleteModal.close();
+            });
+            confirmDeleteBtn.addEventListener('click', async () => {
+                if (activityToDeleteId) {
+                    const collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'academic_events');
+                    try {
+                        await deleteDoc(doc(collectionRef, activityToDeleteId));
+                        activityToDeleteId = null;
+                        confirmDeleteModal.close();
+                    } catch (error) {
+                        console.error("Error deleting document: ", error);
+                    }d
+                }
+            });
+
+
+            searchBox.addEventListener('input', updateView);
+
+
+            // --- Main Execution ---
+            populateStaticUI();
+
+
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    try {
+                        userId = user.uid;
+                        const collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'academic_events');
+                       
+                        await seedInitialData(collectionRef);
+
+
+                        onSnapshot(collectionRef, (snapshot) => {
+                            academicData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                            updateView();
+                        }, (error) => {
+                            console.error("Error with Firestore snapshot listener: ", error);
+                            const loadingIndicator = document.getElementById('loading-indicator');
+                            if(loadingIndicator) {
+                                loadingIndicator.innerHTML = `<span class="text-red-600 font-semibold">Error:</span> Could not listen for database updates. <br> Please check the browser console for details.`;
+                            }
+                        });
+                    } catch (error) {
+                        console.log("Failed to initialize data listener due to seeding error.");
+                        // The error message is already displayed by seedInitialData
+                    }
+                }
+            });
+
+
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                signInWithCustomToken(auth, __initial_auth_token).catch(error => console.error("Error signing in with custom token:", error));
+            } else {
+                signInAnonymously(auth).catch(error => console.error("Error signing in anonymously:", error));
+            }
+        });
+    </script>
+</body>
+</html>
